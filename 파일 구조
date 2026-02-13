@@ -1,0 +1,7 @@
+telegram-verse-bot/
+├── .github/
+│   └── workflows/
+│       └── daily-verse.yml
+├── main.py
+├── requirements.txt
+└── README.md
