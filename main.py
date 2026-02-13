@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import os
 from datetime import datetime
+import re
 
 # GitHub Secrets에서 환경변수 가져오기
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
@@ -33,34 +34,52 @@ def get_all_verses(url):
             text_lines = post_body.get_text().strip().split('\n')
             for line in text_lines:
                 line = line.strip()
-                # 빈 줄이 아니고, 의미있는 길이의 문장만 추출
-                if line and len(line) > 10:
+                if line and len(line) > 15:
                     verses.append(line)
         
         if not verses:
             paragraphs = soup.find_all('p')
             for p in paragraphs:
                 text = p.get_text().strip()
-                if text and len(text) > 10:
+                if text and len(text) > 15:
                     verses.append(text)
         
-        # ⭐ 첫 번째 줄(제목) 제거
-        if verses and len(verses) > 1:
-            # 첫 번째 항목이 제목인지 확인 (짧거나 "메시아닉" 같은 단어 포함)
-            if len(verses[0]) < 50 or "메시아닉" in verses[0] or "축복" in verses[0]:
-                verses = verses[1:]  # 제목 제거
+        # ⭐ 필터링: 실제 말씀만 추출
+        filtered_verses = []
+        skip_keywords = [
+            "메시아닉", "축복하는", "소망의 말", "히브리", "예슈아", 
+            "관점에서", "전하는", "메시지", "뿌리"
+        ]
         
-        print(f"✅ 총 {len(verses)}개의 말씀을 추출했습니다.")
+        for verse in verses:
+            # 제목/설명 문구 건너뛰기
+            should_skip = False
+            for keyword in skip_keywords:
+                if keyword in verse and len(verse) < 80:
+                    should_skip = True
+                    break
+            
+            # 숫자로 시작하는 경우 (예: "1.", "1)", "20.") 제거
+            if re.match(r'^\d+[\.\)]\s*$', verse):
+                should_skip = True
+            
+            # 유효한 말씀만 추가 (충분히 긴 문장)
+            if not should_skip and len(verse) > 20:
+                filtered_verses.append(verse)
         
-        # 디버깅: 처음 3개 출력
+        print(f"✅ 총 {len(filtered_verses)}개의 말씀을 추출했습니다.")
+        
+        # 디버깅: 처음 5개 출력
         print("\n📝 추출된 말씀 미리보기:")
-        for i, v in enumerate(verses[:3], 1):
-            print(f"{i}. {v[:60]}...")
+        for i, v in enumerate(filtered_verses[:5], 1):
+            print(f"{i}. {v[:80]}...")
         
-        return verses
+        return filtered_verses
         
     except Exception as e:
         print(f"❌ 말씀 추출 실패: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def load_progress():
@@ -123,7 +142,7 @@ def send_daily_verse():
     
     if result.get("ok"):
         print(f"✅ 전송 완료: [{current_index + 1}/{len(verses)}]")
-        print(f"📝 내용: {verse[:50]}...")
+        print(f"📝 내용: {verse[:80]}...")
         
         next_index = (current_index + 1) % len(verses)
         save_progress(next_index)
