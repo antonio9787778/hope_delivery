@@ -6,6 +6,10 @@ on:
     - cron: '0 22 * * *'
   workflow_dispatch:  # 수동 실행 가능
 
+# ⭐ 권한 추가 (중요!)
+permissions:
+  contents: write
+
 jobs:
   send-verse:
     runs-on: ubuntu-latest
@@ -13,8 +17,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set up Python
       uses: actions/setup-python@v4
