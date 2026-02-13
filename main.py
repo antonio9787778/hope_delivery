@@ -33,6 +33,7 @@ def get_all_verses(url):
             text_lines = post_body.get_text().strip().split('\n')
             for line in text_lines:
                 line = line.strip()
+                # 빈 줄이 아니고, 의미있는 길이의 문장만 추출
                 if line and len(line) > 10:
                     verses.append(line)
         
@@ -43,7 +44,19 @@ def get_all_verses(url):
                 if text and len(text) > 10:
                     verses.append(text)
         
+        # ⭐ 첫 번째 줄(제목) 제거
+        if verses and len(verses) > 1:
+            # 첫 번째 항목이 제목인지 확인 (짧거나 "메시아닉" 같은 단어 포함)
+            if len(verses[0]) < 50 or "메시아닉" in verses[0] or "축복" in verses[0]:
+                verses = verses[1:]  # 제목 제거
+        
         print(f"✅ 총 {len(verses)}개의 말씀을 추출했습니다.")
+        
+        # 디버깅: 처음 3개 출력
+        print("\n📝 추출된 말씀 미리보기:")
+        for i, v in enumerate(verses[:3], 1):
+            print(f"{i}. {v[:60]}...")
+        
         return verses
         
     except Exception as e:
