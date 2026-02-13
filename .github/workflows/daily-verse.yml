@@ -1,0 +1,46 @@
+name: Daily Verse Telegram Bot
+
+on:
+  schedule:
+    # 매일 오전 7시 (한국시간 기준 - UTC 22:00)
+    - cron: '0 22 * * *'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  send-verse:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Run verse sender
+      env:
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        CHAT_ID: ${{ secrets.CHAT_ID }}
+      run: |
+        python main.py
+    
+    - name: Commit progress file
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add verse_progress.json
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update verse progress [skip ci]"
+    
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: main
